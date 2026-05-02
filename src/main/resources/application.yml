@@ -1,0 +1,64 @@
+spring:
+  application:
+  name: scalecart
+
+# PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/scalecart
+    username: scalecart_user
+    password: scalecart_pass
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: validate          # We'll use Flyway for migrations, not auto DDL
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+
+  # Redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 5
+          min-idle: 2
+
+  # Kafka
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all                   # Wait for all replicas to acknowledge
+      retries: 3
+      properties:
+        enable.idempotence: true  # Exactly-once producer semantics
+    consumer:
+      group-id: scalecart-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.hss.*"
+
+  # App-level config (we'll expand this per service)
+app:
+  jwt:
+    secret: "your-256-bit-secret-replace-this-before-committing"
+    expiration-ms: 86400000       # 24 hours
+    refresh-expiration-ms: 604800000  # 7 days
+
+server:
+  port: 8080
