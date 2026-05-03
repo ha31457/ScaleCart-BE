@@ -3,6 +3,8 @@ package com.hss.scalecart.entity;
 import com.hss.scalecart.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -41,7 +43,8 @@ public class Product extends BaseEntity {
     private String category;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "product_status")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     private ProductStatus status = ProductStatus.ACTIVE;
 }

@@ -3,6 +3,9 @@ package com.hss.scalecart.entity;
 import com.hss.scalecart.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.JdbcTypeRegistration;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -30,7 +33,8 @@ public class User extends BaseEntity {
     private String fullName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "user_role")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     private UserRole role = UserRole.CUSTOMER;
 
