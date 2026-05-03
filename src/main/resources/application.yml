@@ -58,7 +58,7 @@ spring:
 
 app:
   jwt:
-    secret: "your-256-bit-secret-replace-this-before-committing"
+    secret: "uEKGQn2sI2ar2vCt4W71QboqC6SOUh/66SnvuXNiLe8="
     expiration-ms: 86400000
     refresh-expiration-ms: 604800000
 
