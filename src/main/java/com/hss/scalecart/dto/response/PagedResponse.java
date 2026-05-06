@@ -1,15 +1,20 @@
 package com.hss.scalecart.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 import java.util.UUID;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PagedResponse<T> {
     private List<T> items;
     private int pageSize;
     private boolean hasMore;
-    private UUID nextCursor;   // client sends this back as lastSeenId
+    private UUID nextCursor;
 }
