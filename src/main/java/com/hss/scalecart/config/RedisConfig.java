@@ -15,9 +15,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Duration;
 
+@EnableScheduling
 @Configuration
 @EnableCaching
 public class RedisConfig {

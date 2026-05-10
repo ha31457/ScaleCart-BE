@@ -2,7 +2,8 @@ package com.hss.scalecart.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -30,6 +31,7 @@ public class OutboxEvent {
     private String eventType;
 
     // JSONB in Postgres, String in Java — Jackson will serialize/deserialize.
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false, columnDefinition = "jsonb")
     private String payload;
 
