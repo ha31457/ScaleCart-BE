@@ -49,10 +49,14 @@ public class OrderService {
     public OrderResponse placeOrder(UUID customerId, String idempotencyKey, CreateOrderRequest request) {
         // 1. Idempotency check
         String cacheKey = IDEMPOTENCY_CACHE_PREFIX + idempotencyKey;
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) {
-            log.info("Duplicate order request detected for idempotency key: {}", idempotencyKey);
-            return (OrderResponse) cached;
+        try {
+            Object cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                log.info("Duplicate order request detected for idempotency key: {}", idempotencyKey);
+                return (OrderResponse) cached;
+            }
+        } catch (Exception e) {
+            log.warn("Redis unavailable for idempotency check, proceeding without cache: {}", e.getMessage());
         }
 
         // 2. Validate all products exist and are ACTIVE
@@ -138,7 +142,11 @@ public class OrderService {
 
         // 6. Build response + cache under idempotency key
         OrderResponse response = toResponse(savedOrder, productMap);
-        redisTemplate.opsForValue().set(cacheKey, response, IDEMPOTENCY_TTL);
+        try {
+            redisTemplate.opsForValue().set(cacheKey, response, IDEMPOTENCY_TTL);
+        } catch (Exception e) {
+            log.warn("Redis unavailable, idempotency result not cached: {}", e.getMessage());
+        }
 
         log.info("Order placed successfully: orderId={}, customerId={}", savedOrder.getId(), customerId);
         return response;
