@@ -51,36 +51,11 @@ public class OrderEventConsumer {
                 return;
             }
 
-            // Confirm stock for each item
-            for (OrderItem item : order.getItems()) {
-                inventoryService.confirmStock(item.getProductId(), item.getQuantity());
-            }
-
-            // Transition to CONFIRMED
-            order.setStatus(OrderStatus.CONFIRMED);
-            orderRepository.save(order);
-
-            // Publish ORDER_CONFIRMED outbox event
-            String confirmPayload = plainMapper.writeValueAsString(Map.of(
-                    "orderId", orderId.toString(),
-                    "customerId", order.getCustomerId().toString(),
-                    "status", OrderStatus.CONFIRMED.name()
-            ));
-
-            OutboxEvent confirmEvent = OutboxEvent.builder()
-                    .aggregateType("Order")
-                    .aggregateId(orderId)
-                    .eventType("ORDER_CONFIRMED")
-                    .payload(confirmPayload)
-                    .published(false)
-                    .build();
-            outboxEventRepository.save(confirmEvent);
-
-            log.info("Order {} confirmed successfully", orderId);
+            // Order acknowledged — stays PENDING until payment is made
+            log.info("Order {} acknowledged, awaiting payment", orderId);
 
         } catch (Exception e) {
             log.error("Failed to process ORDER_PLACED event: {}", e.getMessage(), e);
-            // In production: send to DLQ or trigger compensation saga
         }
     }
 }
