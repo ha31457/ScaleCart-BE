@@ -53,6 +53,7 @@ public class OutboxPoller {
             case "ORDER_PLACED"     -> KafkaConfig.ORDER_PLACED_TOPIC;
             case "ORDER_CONFIRMED"  -> KafkaConfig.ORDER_LIFECYCLE_TOPIC;
             case "INVENTORY_UPDATE" -> KafkaConfig.INVENTORY_EVENTS_TOPIC;
+            case "ORDER_FAILED" -> KafkaConfig.ORDER_LIFECYCLE_TOPIC;
             default                 -> KafkaConfig.ORDER_LIFECYCLE_TOPIC;
         };
     }
