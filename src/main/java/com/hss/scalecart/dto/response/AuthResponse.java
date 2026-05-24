@@ -15,4 +15,5 @@ public class AuthResponse {
     private long expiresIn;
     private String role;
     private String email;
+    private String refreshToken;
 }

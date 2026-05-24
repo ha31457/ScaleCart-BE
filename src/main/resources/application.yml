@@ -59,8 +59,8 @@ spring:
 app:
   jwt:
     secret: "uEKGQn2sI2ar2vCt4W71QboqC6SOUh/66SnvuXNiLe8="
-    expiration-ms: 86400000
-    refresh-expiration-ms: 604800000
+    expiration-ms: 900000          # 15 minutes (was 86400000)
+    refresh-expiration-ms: 604800000  # 7 days
 
 server:
   port: 8080

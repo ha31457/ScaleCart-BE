@@ -3,6 +3,7 @@ package com.hss.scalecart.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ public class JwtService {
     @Value("${app.jwt.secret}")
     private String secret;
 
+    @Getter
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
 
@@ -67,7 +69,8 @@ public class JwtService {
         }
     }
 
-    public long getExpirationMs() {
-        return expirationMs;
+    public String generateRefreshToken() {
+        return java.util.UUID.randomUUID().toString() +
+                java.util.UUID.randomUUID().toString().replace("-", "");
     }
 }

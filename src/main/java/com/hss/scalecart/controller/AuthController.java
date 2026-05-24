@@ -1,13 +1,13 @@
 package com.hss.scalecart.controller;
 
 import com.hss.scalecart.dto.request.LoginRequest;
+import com.hss.scalecart.dto.request.RefreshRequest;
 import com.hss.scalecart.dto.request.RegisterRequest;
 import com.hss.scalecart.dto.response.ApiResponse;
 import com.hss.scalecart.dto.response.AuthResponse;
 import com.hss.scalecart.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,17 +21,26 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "User registered successfully"));
+        return ResponseEntity.ok(ApiResponse.success(authService.register(request), "Registered successfully"));
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(
-                ApiResponse.success(response, "Login successful"));
+        return ResponseEntity.ok(ApiResponse.success(authService.login(request), "Login successful"));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+            @Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                authService.refresh(request.getRefreshToken()), "Token refreshed"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @Valid @RequestBody RefreshRequest request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success(null, "Logged out successfully"));
     }
 }
