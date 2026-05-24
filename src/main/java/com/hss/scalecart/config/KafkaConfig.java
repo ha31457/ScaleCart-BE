@@ -33,6 +33,7 @@ public class KafkaConfig {
     public static final String ORDER_PLACED_TOPIC     = "order.placed";
     public static final String INVENTORY_EVENTS_TOPIC = "inventory.events";
     public static final String ORDER_LIFECYCLE_TOPIC  = "order.lifecycle";
+    public static final String PAYMENT_EVENTS_TOPIC = "payment.events";
 
     @Bean
     public NewTopic orderPlacedTopic() {
@@ -115,5 +116,13 @@ public class KafkaConfig {
     @Bean
     public KafkaTemplate<String, String> stringKafkaTemplate() {
         return new KafkaTemplate<>(stringProducerFactory());
+    }
+
+    @Bean
+    public NewTopic paymentEventsTopic() {
+        return TopicBuilder.name(PAYMENT_EVENTS_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 }
