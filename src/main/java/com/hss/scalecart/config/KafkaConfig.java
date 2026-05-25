@@ -60,6 +60,14 @@ public class KafkaConfig {
     }
 
     @Bean
+    public NewTopic paymentEventsTopic() {
+        return TopicBuilder.name(PAYMENT_EVENTS_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -118,11 +126,4 @@ public class KafkaConfig {
         return new KafkaTemplate<>(stringProducerFactory());
     }
 
-    @Bean
-    public NewTopic paymentEventsTopic() {
-        return TopicBuilder.name(PAYMENT_EVENTS_TOPIC)
-                .partitions(3)
-                .replicas(1)
-                .build();
-    }
 }
