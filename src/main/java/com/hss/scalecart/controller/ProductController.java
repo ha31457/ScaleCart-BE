@@ -1,6 +1,7 @@
 package com.hss.scalecart.controller;
 
 import com.hss.scalecart.dto.request.CreateProductRequest;
+import com.hss.scalecart.dto.request.ProductSearchRequest;
 import com.hss.scalecart.dto.response.ApiResponse;
 import com.hss.scalecart.dto.response.PagedResponse;
 import com.hss.scalecart.dto.response.ProductResponse;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -46,15 +48,22 @@ public class ProductController {
     // Usage: GET /api/v1/products?category=electronics&pageSize=20
     // Next page: GET /api/v1/products?category=electronics&lastSeenId=<nextCursor>&pageSize=20
     @GetMapping
-    public ResponseEntity<ApiResponse<PagedResponse<ProductResponse>>> listProducts(
+    public ResponseEntity<ApiResponse<PagedResponse<ProductResponse>>> searchProducts(
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) UUID lastSeenId,
-            @RequestParam(defaultValue = "20") int pageSize) {
-
-        if (pageSize > 100) pageSize = 100;  // hard cap — prevent abuse
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        ProductSearchRequest request = ProductSearchRequest.builder()
+                .category(category)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .cursor(cursor)
+                .size(size)
+                .build();
 
         return ResponseEntity.ok(ApiResponse.success(
-                productService.listProducts(category, lastSeenId, pageSize),
-                "Products fetched"));
+                productService.searchProducts(request), "Products fetched"));
     }
 }

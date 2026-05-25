@@ -16,5 +16,5 @@ public class PagedResponse<T> {
     private List<T> items;
     private int pageSize;
     private boolean hasMore;
-    private UUID nextCursor;
+    private String nextCursor;
 }

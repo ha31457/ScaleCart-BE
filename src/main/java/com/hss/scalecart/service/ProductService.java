@@ -13,9 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.hss.scalecart.dto.request.ProductSearchRequest;
+import com.hss.scalecart.util.CursorUtils;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,6 +28,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 50;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
 
@@ -126,8 +132,8 @@ public class ProductService {
                 })
                 .toList();
 
-        UUID nextCursor = hasMore
-                ? products.get(products.size() - 1).getId()
+        String nextCursor = hasMore
+                ? String.valueOf(products.get(products.size() - 1).getId())
                 : null;
 
         return PagedResponse.<ProductResponse>builder()
@@ -153,6 +159,62 @@ public class ProductService {
                 .availableStock(availableStock)
                 .sellerId(product.getSellerId())
                 .createdAt(product.getCreatedAt())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductResponse> searchProducts(ProductSearchRequest request) {
+        int size = request.getSize() > 0
+                ? Math.min(request.getSize(), MAX_PAGE_SIZE)
+                : DEFAULT_PAGE_SIZE;
+
+        Pageable pageable = PageRequest.of(0, size + 1);
+
+        List<Product> products;
+
+        if (request.getCursor() == null || request.getCursor().isBlank()) {
+            products = productRepository.searchProducts(
+                    ProductStatus.ACTIVE,
+                    request.getCategory(),
+                    request.getMinPrice(),
+                    request.getMaxPrice(),
+                    pageable
+            );
+        } else {
+            Instant cursorCreatedAt = CursorUtils.decodeCreatedAt(request.getCursor());
+            UUID cursorId = CursorUtils.decodeId(request.getCursor());
+            products = productRepository.searchProductsWithCursor(
+                    ProductStatus.ACTIVE,
+                    request.getCategory(),
+                    request.getMinPrice(),
+                    request.getMaxPrice(),
+                    cursorCreatedAt,
+                    cursorId,
+                    pageable
+            );
+        }
+
+        boolean hasMore = products.size() > size;
+        List<Product> page = hasMore ? products.subList(0, size) : products;
+
+        String nextCursor = hasMore
+                ? CursorUtils.encode(
+                page.get(page.size() - 1).getCreatedAt(),
+                page.get(page.size() - 1).getId())
+                : null;
+
+        List<ProductResponse> responses = page.stream()
+                .map(p -> {
+                    Inventory inv = inventoryRepository.findByProductId(p.getId()).orElse(null);
+                    return toResponse(p, inv);
+                })
+                .toList();
+
+        return PagedResponse.<ProductResponse>builder()
+                .items(responses)
+                .pageSize(page.size())
+                .hasMore(hasMore)
+                .nextCursor(nextCursor)
                 .build();
     }
 }

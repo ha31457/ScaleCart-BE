@@ -190,7 +190,7 @@ public class OrderService {
                 .map(o -> toResponse(o, productMap))
                 .toList();
 
-        UUID nextCursorUUID = hasNext ? page.get(page.size() - 1).getId() : null;
+        String nextCursorUUID = hasNext ? String.valueOf(page.get(page.size() - 1).getId()) : null;
 
         return PagedResponse.<OrderResponse>builder()
                 .items(responses)
