@@ -53,6 +53,7 @@ public class OrderEventConsumer {
 
             // Order acknowledged — stays PENDING until payment is made
             log.info("Order {} acknowledged, awaiting payment", orderId);
+            throw new RuntimeException("Simulated failure for DLQ test");
 
         } catch (Exception e) {
             log.error("Failed to process ORDER_PLACED event: {}", e.getMessage(), e);
