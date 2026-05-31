@@ -1,0 +1,1 @@
+CREATE TABLE dead_letter_events (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), topic VARCHAR(255) NOT NULL, partition_number INTEGER, kafka_offset BIGINT, payload TEXT NOT NULL, error_reason TEXT, retry_count INTEGER NOT NULL DEFAULT 0, resolved BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMP NOT NULL DEFAULT now(), updated_at TIMESTAMP NOT NULL DEFAULT now());

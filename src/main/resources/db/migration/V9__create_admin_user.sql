@@ -1,0 +1,1 @@
+INSERT INTO users (id, full_name, email, password_hash, role, created_at, updated_at) VALUES (gen_random_uuid(), 'System Admin', 'admin@scalecart.com', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ADMIN', now(), now());
