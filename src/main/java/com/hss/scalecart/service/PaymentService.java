@@ -10,12 +10,16 @@ import com.hss.scalecart.enums.OrderStatus;
 import com.hss.scalecart.enums.PaymentStatus;
 import com.hss.scalecart.repository.OrderRepository;
 import com.hss.scalecart.repository.PaymentRepository;
+import com.hss.scalecart.util.KafkaHeaderUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -81,15 +85,19 @@ public class PaymentService {
     private void publishPaymentEvent(UUID orderId, UUID customerId,
                                      PaymentStatus status, String failureReason) {
         try {
-            Map<String, String> payload = new HashMap<>();
-            payload.put("orderId", orderId.toString());
-            payload.put("customerId", customerId.toString());
-            payload.put("status", status.name());
-            if (failureReason != null) {
-                payload.put("failureReason", failureReason);
+            Map<String, String> payload = Map.of(
+                    "orderId", orderId.toString(),
+                    "customerId", customerId.toString(),
+                    "status", status.name()
+            );
+            String payloadJson = plainMapper.writeValueAsString(payload);
+            String traceId = MDC.get("traceId");
+            ProducerRecord<String, String> kafkaRecord = new ProducerRecord<>("payment.events", orderId.toString(), payloadJson);
+            if (traceId != null) {
+                kafkaRecord.headers().add(KafkaHeaderUtils.TRACE_ID_HEADER,
+                        traceId.getBytes(StandardCharsets.UTF_8));
             }
-            String json = plainMapper.writeValueAsString(payload);
-            kafkaTemplate.send(KafkaConfig.PAYMENT_EVENTS_TOPIC, orderId.toString(), json);
+            kafkaTemplate.send(kafkaRecord);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to publish payment event", e);
         }

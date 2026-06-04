@@ -9,8 +9,11 @@ import com.hss.scalecart.entity.OutboxEvent;
 import com.hss.scalecart.enums.OrderStatus;
 import com.hss.scalecart.repository.OrderRepository;
 import com.hss.scalecart.repository.OutboxEventRepository;
+import com.hss.scalecart.util.KafkaHeaderUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,29 +31,42 @@ public class PaymentEventConsumer {
     private final InventoryService inventoryService;
     private final ObjectMapper plainMapper = new ObjectMapper();
 
-    @KafkaListener(topics = KafkaConfig.PAYMENT_EVENTS_TOPIC, groupId = "scalecart-group")
+    @KafkaListener(topics = "payment.events", groupId = "scalecart-group")
     @Transactional
-    public void handlePaymentEvent(String payload) {
-        log.info("PAYMENT event received: {}", payload);
+    public void handlePaymentEvent(ConsumerRecord<String, String> record) throws Exception {
+        String traceId = KafkaHeaderUtils.extractTraceId(record);
         try {
+            if (traceId != null) MDC.put("traceId", traceId);
+
+            String payload = record.value();
+
             JsonNode node = plainMapper.readTree(payload);
             UUID orderId = UUID.fromString(node.get("orderId").asText());
+            String customerId = node.get("customerId").asText();
             String status = node.get("status").asText();
+
+            MDC.put("orderId", orderId.toString());
+            MDC.put("customerId", customerId);
+            log.info("PAYMENT event received: {}", payload);
 
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
 
-            if (status.equals("SUCCESS")) {
+            if ("SUCCESS".equals(status)) {
                 handlePaymentSuccess(order);
-            } else {
+            } else if ("FAILED".equals(status)) {
                 String failureReason = node.has("failureReason")
                         ? node.get("failureReason").asText()
                         : "Payment failed";
                 handlePaymentFailure(order, failureReason);
+            } else {
+                log.warn("Unknown payment status: {}", status);
             }
 
-        } catch (Exception e) {
-            log.error("Failed to process PAYMENT event: {}", e.getMessage(), e);
+        } finally {
+            MDC.remove("traceId");
+            MDC.remove("orderId");
+            MDC.remove("customerId");
         }
     }
 

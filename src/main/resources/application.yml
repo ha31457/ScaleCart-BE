@@ -56,15 +56,30 @@ spring:
       properties:
         spring.json.trusted.packages: "com.hss.*"
 
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
 app:
   jwt:
     secret: "uEKGQn2sI2ar2vCt4W71QboqC6SOUh/66SnvuXNiLe8="
     expiration-ms: 900000          # 15 minutes (was 86400000)
     refresh-expiration-ms: 604800000  # 7 days
+  zipkin:
+    endpoint: http://localhost:9411/api/v2/spans
 
 server:
   port: 8080
 
 logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId},%X{customerId},%X{orderId}]"
   level:
+    org.springframework.boot.autoconfigure: DEBUG
+    io.micrometer.tracing: DEBUG
     org.flywaydb: DEBUG

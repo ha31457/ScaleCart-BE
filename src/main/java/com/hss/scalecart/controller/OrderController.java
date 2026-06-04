@@ -7,6 +7,7 @@ import com.hss.scalecart.dto.response.PagedResponse;
 import com.hss.scalecart.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +32,7 @@ public class OrderController {
         OrderResponse response = orderService.placeOrder(
                 UUID.fromString(userId), idempotencyKey, request
         );
+        MDC.put("orderId", response.getId().toString());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Order Placed Successfully"));
     }

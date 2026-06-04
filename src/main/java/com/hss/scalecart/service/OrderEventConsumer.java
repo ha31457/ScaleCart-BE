@@ -9,8 +9,11 @@ import com.hss.scalecart.entity.OutboxEvent;
 import com.hss.scalecart.enums.OrderStatus;
 import com.hss.scalecart.repository.OrderRepository;
 import com.hss.scalecart.repository.OutboxEventRepository;
+import com.hss.scalecart.util.KafkaHeaderUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,11 +40,20 @@ public class OrderEventConsumer {
 
     @KafkaListener(topics = KafkaConfig.ORDER_PLACED_TOPIC, groupId = "scalecart-group")
     @Transactional
-    public void handleOrderPlaced(String payload) {
-        log.info("ORDER_PLACED event received: {}", payload);
+    public void handleOrderPlaced(ConsumerRecord<String, String> record) throws Exception {
+        String traceId = KafkaHeaderUtils.extractTraceId(record);
         try {
+            if (traceId != null) MDC.put("traceId", traceId);
+
+            String payload = record.value();
+            log.info("ORDER_PLACED event received: {}", payload);
+
             JsonNode node = plainMapper.readTree(payload);
             UUID orderId = UUID.fromString(node.get("orderId").asText());
+            MDC.put("orderId", orderId.toString());
+
+            String customerId = node.get("customerId").asText();
+            MDC.put("customerId", customerId);
 
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
@@ -51,12 +63,11 @@ public class OrderEventConsumer {
                 return;
             }
 
-            // Order acknowledged — stays PENDING until payment is made
             log.info("Order {} acknowledged, awaiting payment", orderId);
-            throw new RuntimeException("Simulated failure for DLQ test");
-
-        } catch (Exception e) {
-            log.error("Failed to process ORDER_PLACED event: {}", e.getMessage(), e);
+        } finally {
+            MDC.remove("traceId");
+            MDC.remove("orderId");
+            MDC.remove("customerId");
         }
     }
 }

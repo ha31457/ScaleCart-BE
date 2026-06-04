@@ -3,15 +3,19 @@ package com.hss.scalecart.service;
 import com.hss.scalecart.config.KafkaConfig;
 import com.hss.scalecart.entity.OutboxEvent;
 import com.hss.scalecart.repository.OutboxEventRepository;
+import com.hss.scalecart.util.KafkaHeaderUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -38,10 +42,17 @@ public class OutboxPoller {
         for (OutboxEvent event : unpublished) {
             try {
                 String topic = resolveTopic(event.getEventType());
-                kafkaTemplate.send(topic, event.getAggregateId().toString(), event.getPayload());
-                event.setPublished(true);
+                // In OutboxPoller, replace the send call:
+                String traceId = UUID.randomUUID().toString().replace("-", "");
+                ProducerRecord<String, String> kafkaRecord = new ProducerRecord<>(
+                        topic, null, event.getAggregateId().toString(), event.getPayload());
+                kafkaRecord.headers().add(KafkaHeaderUtils.TRACE_ID_HEADER,
+                        traceId.getBytes(StandardCharsets.UTF_8));
+                kafkaTemplate.send(kafkaRecord);
+                log.info("Published outbox event: type={}, aggregateId={}, traceId={}",
+                        event.getEventType(), event.getAggregateId(), traceId);
                 outboxEventRepository.save(event);
-                log.info("Published outbox event: type={}, aggregateId={}", event.getEventType(), event.getAggregateId());
+                event.setPublished(true);
             } catch (Exception e) {
                 log.error("Failed to publish outbox event {}: {}", event.getId(), e.getMessage());
             }
